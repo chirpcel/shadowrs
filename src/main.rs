@@ -1,6 +1,7 @@
 mod cli;
 mod config;
 mod oci;
+mod namespace;
 
 use clap::Parser;
 use cli::Cli;
