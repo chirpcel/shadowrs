@@ -1,5 +1,11 @@
 [package]
 name = "shadowrs"
+description = "Tool to shadow existing container with additional tools"
+authors = ["chirpcel <git@mkrsten.net>"]
+repository = "https://github.com/chirpcel/shadowrs"
+readme = "README.md"
+license = "MIT"
+license-file = "LICENSE"
 version = "0.1.0"
 edition = "2021"
 
