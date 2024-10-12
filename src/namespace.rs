@@ -1,5 +1,5 @@
 #[allow(non_camel_case_types)]
-enum Namespace {
+pub enum Namespace {
     ipc(String),
     mnt(String),
     net(String),
@@ -7,24 +7,24 @@ enum Namespace {
 }
 
 impl Namespace {
-    fn from_string(input: &str) -> Option<Self> {
-        if input.starts_with("cgroup:[") && input.ends_with("]") {
-            let parts: Vec<&str> = input[7..input.len()-1].split(':').collect();
-            if parts.len() == 2 {
-                match parts[0] {
-                    "ipc" => return Some(Namespace::ipc(parts[1].to_string())),
-                    "mnt" => return Some(Namespace::mnt(parts[1].to_string())),
-                    "net" => return Some(Namespace::net(parts[1].to_string())),
-                    "pid" => return Some(Namespace::pid(parts[1].to_string())),
-                    _ => return None,
-                }
+    pub fn from_string(input: &str) -> Option<Self> {
+        let input: Vec<&str> = input.split(":").collect();
+        if input[1].starts_with("[") {
+            let ns_value: Vec<&str> = input[1].split("]").collect();
+            match input[0] {
+                "ipc" => return Some(Namespace::ipc(ns_value[0].to_string().replace("[", ""))),
+                "mnt" => return Some(Namespace::mnt(ns_value[0].to_string().replace("[", ""))),
+                "net" => return Some(Namespace::net(ns_value[0].to_string().replace("[", ""))),
+                "pid" => return Some(Namespace::pid(ns_value[0].to_string().replace("[", ""))),
+                _ => return None,
             }
         }
         None
     }
 }
 
-struct ContainerNamespace {
+#[derive(Debug)]
+pub struct ContainerNamespace {
     pub container_id: String,
     pub ipc_namespace: String,
     pub mnt_namespace: String,
