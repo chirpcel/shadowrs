@@ -1,11 +1,19 @@
-mod docker_cli;
-use crate::namespace::Namespace;
+use crate::config::Config;
 
-pub trait Oci {
-    fn get_pid_by_container_id(&self, container_id: &str) -> Result<String, Box<dyn std::error::Error>>;
-    fn get_namespaces_by_pid(&self, pid: &str) -> Result<Vec<Namespace>, Box<dyn std::error::Error>>;
+mod docker_cli;
+
+#[derive(Debug)]
+pub struct ContainerInfo {
+    pub container_id: String,
+    pub container_pid: String,
 }
 
-pub fn get_oci() -> Box<dyn Oci> {
-    Box::new(docker_cli::DockerCli {})
+pub trait Oci {
+    fn new(config: Config) -> Self where Self: Sized;
+    fn get_container_info_byid(&self, container_id: &str) -> Result<ContainerInfo, Box<dyn std::error::Error>>;
+    fn run_shadow_container(&self, container_info: ContainerInfo) -> Result<(), Box<dyn std::error::Error>>;
+}
+
+pub fn get_oci(config: Config) -> Box<dyn Oci> {
+    Box::new(docker_cli::DockerCli::new(config))
 }

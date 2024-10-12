@@ -2,15 +2,30 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct Config {
-    nixery: NixeryConfig,
-    docker: DockerConfig
+    pub nixery: NixeryConfig,
+    pub docker: DockerConfig
+}
+
+impl Config {
+    pub fn with_tools(tools: String) -> Self {
+        Config {
+            nixery: NixeryConfig {
+                registry: default_registry(),
+                tools: Some(tools),
+            },
+            docker: DockerConfig {
+                command: default_command()
+            }
+        }
+    }
 }
 
 impl Default for Config {
     fn default() -> Self {
         Config {
             nixery: NixeryConfig {
-                registry: default_registry()
+                registry: default_registry(),
+                tools: None,
             },
             docker: DockerConfig {
                 command: default_command()
@@ -20,9 +35,10 @@ impl Default for Config {
 }
 
 #[derive(Deserialize)]
-struct NixeryConfig {
+pub struct NixeryConfig {
     #[serde(default = "default_registry")]
-    registry: String
+    pub registry: String,
+    pub tools: Option<String>
 }
 
 fn default_registry() -> String {
@@ -30,9 +46,9 @@ fn default_registry() -> String {
 }
 
 #[derive(Deserialize)]
-struct DockerConfig {
+pub struct DockerConfig {
     #[serde(default = "default_command")]
-    command: String
+    pub command: String
 }
 
 fn default_command() -> String {

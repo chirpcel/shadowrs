@@ -1,40 +1,51 @@
 use std::process::Command;
+use crate::config::Config;
 
-use super::Oci;
+use super::{ContainerInfo, Oci};
 
-pub struct DockerCli {}
+pub struct DockerCli {
+    config: Config,
+}
 impl Oci for DockerCli {
-    fn get_pid_by_container_id(&self, container_id: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let output = Command::new("docker")
+
+    fn new(config: crate::config::Config) -> Self {
+        DockerCli { config }
+    }
+
+    fn get_container_info_byid(&self, container_id: &str) -> Result<ContainerInfo, Box<dyn std::error::Error>> {
+        let output = Command::new(self.config.docker.command.as_str())
             .args(&["inspect", "-f", "{{.State.Pid}}", container_id])
             .output()?;
         let pid = String::from_utf8(output.stdout)?;
-        Ok(pid.trim().to_string())
+        Ok(ContainerInfo {
+            container_id: container_id.to_string(), 
+            container_pid: pid.trim().to_string(),
+        })
     }
     
-    fn get_namespaces_by_pid(&self, pid: &str) -> Result<Vec<crate::namespace::Namespace>, Box<dyn std::error::Error>> {
-        let mnt_arg = format!("/proc/{}/ns:/mnt", pid);
-        let ipc_output = Command::new("docker")
-            .args(&["run", "--rm", "-v", &mnt_arg, "busybox", "readlink", "/mnt/ipc"])
-            .output()?;
-        let ipc = String::from_utf8(ipc_output.stdout)?;
-        let mnt_output = Command::new("docker")
-            .args(&["run", "--rm", "-v", &mnt_arg, "busybox", "readlink", "/mnt/mnt"])
-            .output()?;
-        let mnt = String::from_utf8(mnt_output.stdout)?;
-        let net_output = Command::new("docker")
-            .args(&["run", "--rm", "-v", &mnt_arg, "busybox", "readlink", "/mnt/net"])
-            .output()?;
-        let net = String::from_utf8(net_output.stdout)?;
-        let pid_output = Command::new("docker")
-            .args(&["run", "--rm", "-v", &mnt_arg, "busybox", "readlink", "/mnt/pid"])
-            .output()?;
-        let pid = String::from_utf8(pid_output.stdout)?;
-        Ok(vec![
-            crate::namespace::Namespace::from_string(&ipc.trim().to_string()).unwrap(),
-            crate::namespace::Namespace::from_string(&mnt.trim().to_string()).unwrap(),
-            crate::namespace::Namespace::from_string(&net.trim().to_string()).unwrap(),
-            crate::namespace::Namespace::from_string(&pid.trim().to_string()).unwrap(),
-        ])
+    fn run_shadow_container(&self, container_info: ContainerInfo) -> Result<(), Box<dyn std::error::Error>> {
+        let shadow_image = get_shadow_image_name(&self.config.nixery.registry, &self.config.nixery.tools.clone().unwrap_or_default());
+        println!("Shadowing container {} with image: {}", container_info.container_id, shadow_image);
+        Command::new(self.config.docker.command.as_str())
+            .arg("run")
+            .arg("-it")
+            .arg("--rm")
+            .args(&["--pid", format!("container:{}", container_info.container_id).as_str()])
+            .args(&["--network", format!("container:{}", container_info.container_id).as_str()])
+            .arg(shadow_image)
+            .arg("bash")
+            .spawn()?;
+        Ok(())
     }
+    
+}
+
+#[cfg(target_arch = "aarch64")]
+fn get_shadow_image_name(reg: &str, tools: &str) -> String {
+    format!("{}/shell/arm64{}", reg, tools)
+}
+
+#[cfg(target_arch = "x86_64")]
+fn get_shadow_image_name(reg: &str, tools: &str) -> String {
+    format!("{}/shell{}", reg, tools)
 }
