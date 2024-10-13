@@ -11,6 +11,7 @@ pub struct ContainerInfo {
 pub trait Oci {
     fn new(config: Config) -> Self where Self: Sized;
     fn get_container_info_byid(&self, container_id: &str) -> Result<ContainerInfo, Box<dyn std::error::Error>>;
+    fn prepare_shadow_container(&self) -> Result<(), Box<dyn std::error::Error>>;
     fn run_shadow_container(&self, container_info: ContainerInfo) -> Result<(), Box<dyn std::error::Error>>;
 }
 

@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{process::Command, thread::sleep, time::Duration};
 use crate::config::Config;
 
 use super::{ContainerInfo, Oci};
@@ -22,6 +22,11 @@ impl Oci for DockerCli {
             container_pid: pid.trim().to_string(),
         })
     }
+
+    fn prepare_shadow_container(&self) -> Result<(), Box<dyn std::error::Error>> {
+        sleep(Duration::from_secs(3));
+        Ok(())
+    }
     
     fn run_shadow_container(&self, container_info: ContainerInfo) -> Result<(), Box<dyn std::error::Error>> {
         let shadow_image = get_shadow_image_name(&self.config.nixery.registry, &self.config.nixery.tools.clone().unwrap_or_default());
@@ -37,7 +42,6 @@ impl Oci for DockerCli {
             .spawn()?.wait()?;
         Ok(())
     }
-    
 }
 
 #[cfg(target_arch = "aarch64")]

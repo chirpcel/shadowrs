@@ -51,6 +51,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             provider: Some(String::from("busybox")),
+            persistent: bool::default(),
             docker: DockerConfig {
                 command: default_command()
             },
