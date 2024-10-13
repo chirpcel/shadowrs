@@ -2,20 +2,25 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct Config {
+    pub docker: DockerConfig,
+    pub nix: NixConfig,
     pub nixery: NixeryConfig,
-    pub docker: DockerConfig
 }
 
 impl Config {
     pub fn with_tools(tools: String) -> Self {
         Config {
+            docker: DockerConfig {
+                command: default_command()
+            },
+            nix: NixConfig {
+                image: default_nix_image()
+            },
             nixery: NixeryConfig {
                 registry: default_registry(),
                 tools: Some(tools),
             },
-            docker: DockerConfig {
-                command: default_command()
-            }
+            
         }
     }
 }
@@ -23,15 +28,28 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
+            docker: DockerConfig {
+                command: default_command()
+            },
+            nix: NixConfig {
+                image: default_nix_image()
+            },
             nixery: NixeryConfig {
                 registry: default_registry(),
                 tools: None,
             },
-            docker: DockerConfig {
-                command: default_command()
-            }
         }
     }
+}
+
+#[derive(Deserialize)]
+pub struct NixConfig {
+    #[serde(default = "default_nix_image")]
+    pub image: String
+}
+
+fn default_nix_image() -> String {
+    "nixos/nix".to_string()
 }
 
 #[derive(Deserialize)]
