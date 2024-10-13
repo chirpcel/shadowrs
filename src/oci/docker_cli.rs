@@ -34,7 +34,7 @@ impl Oci for DockerCli {
             .args(&["--network", format!("container:{}", container_info.container_id).as_str()])
             .arg(shadow_image)
             .arg("bash")
-            .spawn()?;
+            .spawn()?.wait()?;
         Ok(())
     }
     
