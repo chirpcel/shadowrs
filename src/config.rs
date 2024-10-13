@@ -2,6 +2,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct Config {
+    pub provider: Option<String>,
     pub docker: DockerConfig,
     pub nix: NixConfig,
     pub nixery: NixeryConfig,
@@ -10,6 +11,7 @@ pub struct Config {
 impl Config {
     pub fn with_tools(tools: String) -> Self {
         Config {
+            provider: Some(String::from("nixery")),
             docker: DockerConfig {
                 command: default_command()
             },
@@ -23,11 +25,29 @@ impl Config {
             
         }
     }
+
+    pub fn with_provider(provider: String) -> Self {
+        Config {
+            provider: Some(provider),
+            docker: DockerConfig {
+                command: default_command()
+            },
+            nix: NixConfig {
+                image: default_nix_image()
+            },
+            nixery: NixeryConfig {
+                registry: default_registry(),
+                tools: None,
+            },
+            
+        }
+    }
 }
 
 impl Default for Config {
     fn default() -> Self {
         Config {
+            provider: Some(String::from("busybox")),
             docker: DockerConfig {
                 command: default_command()
             },
